@@ -161,16 +161,41 @@ parts:
       - -lib/systemd
       - -usr/lib/systemd
       - -usr/share/man
+      # Mute lint by removing unnecessary libs flagged as unused by the
+      # snapcraft library linter (glibc compat stubs and NSS modules not
+      # dlopen'd or linked at runtime by anything staged in this snap) —
+      # verified via grep across usr/bin, usr/sbin, and usr/lib/valkey.
+      - -usr/lib/*/libBrokenLocale.so*
+      - -usr/lib/*/libanl.so*
+      - -usr/lib/*/libc_malloc_debug.so*
+      - -usr/lib/*/libdl.so*
+      - -usr/lib/*/libdrop_ambient.so*
+      - -usr/lib/*/libmemusage.so*
+      - -usr/lib/*/libmvec.so*
+      - -usr/lib/*/libnsl.so*
+      - -usr/lib/*/libnss_compat.so*
+      - -usr/lib/*/libnss_dns.so*
+      - -usr/lib/*/libnss_files.so*
+      - -usr/lib/*/libnss_hesiod.so*
+      - -usr/lib/*/libpamc.so*
+      - -usr/lib/*/libpcprofile.so*
+      - -usr/lib/*/libpthread.so*
+      - -usr/lib/*/libresolv.so*
+      - -usr/lib/*/librt.so*
+      - -usr/lib/*/libthread_db.so*
+      - -usr/lib/*/libtic.so*
+      - -usr/lib/*/libutil.so*
 
   snap-scripts:
     plugin: dump
     source: snap/local
-    organize:
-      bin: bin
-      etc: etc
     override-prime: |
-      snapcraftctl prime
-      for f in bin/*.sh etc/*.conf; do
+      craftctl default
+      # Scoped to this part's own files by name — a bare etc/*.conf glob
+      # would also sweep unrelated system configs (adduser.conf,
+      # debconf.conf, etc.) staged into the same shared prime dir by other
+      # parts, risking a false-positive _NAME_ substring match there.
+      for f in bin/valkey-server.sh bin/valkey-sentinel.sh etc/valkey.conf etc/sentinel.conf; do
         sed -i "s/_NAME_/$SNAPCRAFT_PROJECT_NAME/g" "$f"
       done
 

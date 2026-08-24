@@ -1,0 +1,47 @@
+summary: Percona for Valkey persistence tests
+
+prepare: |
+  snap install "${SPREAD_PATH}/$(basename "${CRAFT_ARTIFACT}")" --dangerous --jailmode
+  ok=0
+  for _ in $(seq 30); do
+    percona-valkey.valkey-cli ping 2>/dev/null | grep -q PONG && { ok=1; break; }
+    sleep 2
+  done
+  [ "$ok" = 1 ]
+
+execute: |
+  echo "Percona for Valkey persistence tests"
+
+  echo "Test RDB persistence"
+  percona-valkey.valkey-cli SET marker "persisted-final"
+  percona-valkey.valkey-cli SAVE | grep -q OK
+  snap stop percona-valkey.valkey-server
+  sleep 2
+  snap start percona-valkey.valkey-server
+  ok=0
+  for _ in $(seq 30); do
+    percona-valkey.valkey-cli ping 2>/dev/null | grep -q PONG && { ok=1; break; }
+    sleep 2
+  done
+  [ "$ok" = 1 ]
+  percona-valkey.valkey-cli GET marker | grep -q "persisted-final"
+
+  echo "Test AOF persistence"
+  percona-valkey.valkey-cli CONFIG SET appendonly yes | grep -q OK
+  percona-valkey.valkey-cli BGREWRITEAOF
+  sleep 3
+  percona-valkey.valkey-cli SET marker2 "aof-marker"
+  snap stop percona-valkey.valkey-server
+  sleep 2
+  snap start percona-valkey.valkey-server
+  ok=0
+  for _ in $(seq 30); do
+    percona-valkey.valkey-cli ping 2>/dev/null | grep -q PONG && { ok=1; break; }
+    sleep 2
+  done
+  [ "$ok" = 1 ]
+  percona-valkey.valkey-cli GET marker | grep -q "persisted-final"
+  percona-valkey.valkey-cli GET marker2 | grep -q "aof-marker"
+
+restore: |
+  snap remove percona-valkey --purge --terminate || true

@@ -35,15 +35,14 @@ base: core26
 confinement: strict
 grade: stable
 
-architectures:
-  - amd64
-  - arm64
+license: Apache-2.0
+
+platforms:
+  amd64:
+  arm64:
 
 system-usernames:
-  snap_daemon:
-    scope: shared
-
-license: Apache-2.0
+  snap_daemon: shared
 
 contact: https://github.com/EvgeniyPatlan/percona-valkey-snap
 issues: https://github.com/EvgeniyPatlan/percona-valkey-snap/issues
@@ -59,7 +58,10 @@ hooks:
 
 package-repositories:
   - type: apt
-    ppa: percona/percona-valkey-91
+    url: https://repo.percona.com/valkey-91/apt
+    suites: [resolute]
+    components: [main]
+    key-id: 4D1BB29D63D98E422B2113B19334A25F8507EFA5
     # NOTE: percona-valkey-bundle is deliberately NOT staged — as of 9.1.1-2 its
     # Depends names percona-valkey-ldap, which valkey-91 does not ship, making
     # the meta uninstallable. Components are pinned individually instead.
@@ -146,10 +148,11 @@ parts:
       usr/share/doc/percona-valkey-search/copyright: licenses/COPYRIGHT-percona-valkey-search
       usr/share/doc/percona-valkey-audit/copyright: licenses/COPYRIGHT-percona-valkey-audit
 
-      # Collision relocations — avoid conflicts with snap's own config templates.
-      usr/share/percona-valkey-server/valkey.conf.default: usr/share/percona-valkey-server/valkey.conf.default-upstream
-      usr/share/percona-valkey-sentinel/sentinel.conf.default: usr/share/percona-valkey-sentinel/sentinel.conf.default-upstream
-      usr/share/percona-valkey-audit/valkey-audit.conf.default: usr/share/percona-valkey-audit/valkey-audit.conf.default-upstream
+      # Deb-shipped configs relocated aside: our snap-scripts templates own
+      # the live paths; these stay as operator reference copies.
+      etc/valkey/valkey.conf: usr/share/percona-valkey-server/valkey.conf.default
+      etc/valkey/sentinel.conf: usr/share/percona-valkey-sentinel/sentinel.conf.default
+      etc/valkey/valkey.conf.d/valkey-audit.conf: usr/share/percona-valkey-audit/valkey-audit.conf.default
 
     prime:
       - -etc/init.d
@@ -173,6 +176,8 @@ parts:
 
   snap-license:
     plugin: dump
-    source: snap/license
-    prime:
-      - LICENSE
+    source: .
+    stage:
+      - licenses/LICENSE-snap
+    organize:
+      LICENSE: licenses/LICENSE-snap

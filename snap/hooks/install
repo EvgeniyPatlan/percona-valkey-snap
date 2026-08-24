@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 set -eux
 
-id
-
 DATA="${SNAP_COMMON}/data"
 LOGS="${SNAP_COMMON}/log"
 RUN="${SNAP_DATA}/run"
@@ -26,17 +24,14 @@ fi
 if [ ! -f "${ETC}/sentinel.conf" ]; then
     cp "${SNAP}/etc/sentinel.conf" "${ETC}/sentinel.conf"
 fi
-ls -land "${ETC}"
 chown -R snap_daemon:root "${ETC}"
 
 # Logs
 mkdir -p "${LOGS}"
-ls -land "${LOGS}"
 chown -R snap_daemon:root "${LOGS}"
 
 # Sockets
 mkdir -p "${RUN}"
-ls -land "${RUN}"
 chown -R snap_daemon:root "${RUN}"
 
 # Data directory: round 2's CI evidence shows ETC/LOGS/RUN above (each
@@ -50,5 +45,4 @@ chown -R snap_daemon:root "${RUN}"
 # mode into its creation (mkdir -m) so chown is its only post-creation
 # touch, same shape as ETC/LOGS/RUN.
 mkdir -p -m 750 "${DATA}"
-ls -land "${DATA}"
 chown snap_daemon:root "${DATA}"

@@ -34,8 +34,10 @@ execute: |
     sleep 1
   done
   [ "$ok" = 1 ]
+  percona-valkey.valkey-cli CONFIG REWRITE | grep -q OK
   percona-valkey.valkey-cli SET marker2 "aof-marker"
   snap stop percona-valkey.valkey-server
+  rm -f /var/snap/percona-valkey/common/data/dump.rdb
   sleep 2
   snap start percona-valkey.valkey-server
   ok=0
@@ -44,6 +46,7 @@ execute: |
     sleep 2
   done
   [ "$ok" = 1 ]
+  percona-valkey.valkey-cli INFO persistence | grep -q aof_enabled:1
   percona-valkey.valkey-cli GET marker | grep -q "persisted-final"
   percona-valkey.valkey-cli GET marker2 | grep -q "aof-marker"
 

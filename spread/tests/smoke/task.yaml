@@ -50,8 +50,8 @@ execute: |
   [ "$ok" = 1 ]
 
   echo "Test snap services are correctly configured"
-  snap services | grep "\.valkey-server\s\+enabled\s\+active"
-  snap services | grep "\.valkey-sentinel\s\+disabled\s\+inactive"
+  snap services | grep -qE '\.valkey-server\s+enabled\s+active'
+  snap services | grep -qE '\.valkey-sentinel\s+disabled\s+inactive'
 
   echo "Test CONFIG REWRITE and restart"
   percona-valkey.valkey-cli CONFIG REWRITE | grep -q OK

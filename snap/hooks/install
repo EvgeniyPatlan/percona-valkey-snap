@@ -39,9 +39,16 @@ mkdir -p "${RUN}"
 ls -land "${RUN}"
 chown -R snap_daemon:root "${RUN}"
 
-# Data directory: create, hand ownership to snap_daemon, then lock down
-# group/other access — in that order, matching the sibling hook exactly.
-mkdir -p "${DATA}"
+# Data directory: round 2's CI evidence shows ETC/LOGS/RUN above (each
+# touched by exactly one post-creation op, chown -R) succeed every time,
+# while DATA — the only path touched by TWO post-creation ops (chown,
+# then chmod) — fails on the *second* op regardless of which op runs
+# second (chmod-after-chown: "Operation not permitted"; chown-after-chmod:
+# "Permission denied" trying to access the same path). The invariant a
+# path may receive at most one post-creation mutating touch under this
+# confinement, not group ownership or per-directory ordering. Fold DATA's
+# mode into its creation (mkdir -m) so chown is its only post-creation
+# touch, same shape as ETC/LOGS/RUN.
+mkdir -p -m 750 "${DATA}"
 ls -land "${DATA}"
 chown snap_daemon:root "${DATA}"
-chmod go-rwx "${DATA}"

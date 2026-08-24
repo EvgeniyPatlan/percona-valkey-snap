@@ -1,0 +1,36 @@
+summary: Percona for Valkey upgrade tests
+
+# TODO(release): remove `manual` once percona-valkey is published to 9.1/edge
+manual: true
+
+prepare: |
+  snap install percona-valkey --channel 9.1/edge
+  ok=0
+  for _ in $(seq 30); do
+    percona-valkey.valkey-cli ping 2>/dev/null | grep -q PONG && { ok=1; break; }
+    sleep 2
+  done
+  [ "$ok" = 1 ]
+
+execute: |
+  echo "Creating test data..."
+
+  CMD="percona-valkey.valkey-cli"
+
+  ${CMD} SET test-key "test-value"
+  ${CMD} GET test-key | grep -q "test-value"
+
+  echo "Upgrading to local snap..."
+  snap install "${SPREAD_PATH}/$(basename "${CRAFT_ARTIFACT}")" --dangerous --jailmode
+  ok=0
+  for _ in $(seq 30); do
+    percona-valkey.valkey-cli ping 2>/dev/null | grep -q PONG && { ok=1; break; }
+    sleep 2
+  done
+  [ "$ok" = 1 ]
+
+  echo "Checking test data after upgrade..."
+  ${CMD} GET test-key | grep -q "test-value"
+
+restore: |
+  snap remove percona-valkey --purge --terminate || true

@@ -1,0 +1,32 @@
+summary: Percona for Valkey Sentinel service tests
+
+prepare: |
+  snap install "${SPREAD_PATH}/$(basename "${CRAFT_ARTIFACT}")" --dangerous --jailmode
+  ok=0
+  for _ in $(seq 30); do
+    percona-valkey.valkey-cli ping 2>/dev/null | grep -q PONG && { ok=1; break; }
+    sleep 2
+  done
+  [ "$ok" = 1 ]
+
+execute: |
+  echo "Percona for Valkey Sentinel tests"
+
+  echo "Activate sentinel monitor line"
+  sed -i 's/^# sentinel monitor mymaster/sentinel monitor mymaster/' /var/snap/percona-valkey/current/etc/valkey/sentinel.conf
+  grep -q '^sentinel monitor mymaster' /var/snap/percona-valkey/current/etc/valkey/sentinel.conf
+
+  echo "Start Sentinel service"
+  snap start percona-valkey.valkey-sentinel
+  sleep 3
+
+  echo "Test SENTINEL master command"
+  ok=0
+  for _ in $(seq 30); do
+    percona-valkey.valkey-cli -p 26379 SENTINEL master mymaster 2>/dev/null | grep -q 127.0.0.1 && { ok=1; break; }
+    sleep 2
+  done
+  [ "$ok" = 1 ]
+
+restore: |
+  snap remove percona-valkey --purge --terminate || true

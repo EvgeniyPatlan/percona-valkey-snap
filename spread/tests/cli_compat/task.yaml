@@ -1,0 +1,30 @@
+summary: Percona for Valkey Redis CLI compatibility tests
+
+prepare: |
+  snap install "${SPREAD_PATH}/$(basename "${CRAFT_ARTIFACT}")" --dangerous --jailmode
+  ok=0
+  for _ in $(seq 30); do
+    percona-valkey.valkey-cli ping 2>/dev/null | grep -q PONG && { ok=1; break; }
+    sleep 2
+  done
+  [ "$ok" = 1 ]
+
+execute: |
+  echo "Percona for Valkey Redis CLI compatibility tests"
+
+  echo "Test redis-cli SET/GET round-trip"
+  percona-valkey.redis-cli SET rediscompat "hello2" | grep -q OK
+  percona-valkey.redis-cli GET rediscompat | grep -q "hello2"
+
+  echo "Test redis-benchmark"
+  percona-valkey.redis-benchmark -n 100 -c 2 -q -t set,get
+
+  echo "Test redis-check-rdb success wording"
+  percona-valkey.valkey-cli SAVE | grep -q OK
+  percona-valkey.redis-check-rdb /var/snap/percona-valkey/common/data/dump.rdb | \
+    grep -q "Check RDB returned error code 0 (0 means success)"
+  percona-valkey.redis-check-rdb /var/snap/percona-valkey/common/data/dump.rdb | \
+    grep -qF '\o/ RDB looks OK! \o/'
+
+restore: |
+  snap remove percona-valkey --purge --terminate || true

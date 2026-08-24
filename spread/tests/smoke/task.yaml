@@ -23,11 +23,10 @@ execute: |
   percona-valkey.valkey-cli GET test-key | grep -q "hello-world"
 
   echo "Test MODULE LIST contains all four Percona modules"
-  MODULES=$(percona-valkey.valkey-cli --no-raw MODULE LIST)
-  echo "$MODULES" | grep -qx "audit"
-  echo "$MODULES" | grep -qx "bf"
-  echo "$MODULES" | grep -qx "json"
-  echo "$MODULES" | grep -qx "search"
+  percona-valkey.valkey-cli MODULE LIST | grep -qx "audit"
+  percona-valkey.valkey-cli MODULE LIST | grep -qx "bf"
+  percona-valkey.valkey-cli MODULE LIST | grep -qx "json"
+  percona-valkey.valkey-cli MODULE LIST | grep -qx "search"
 
   echo "Test JSON module"
   percona-valkey.valkey-cli JSON.SET doc \$ '{"hello":"world"}' | grep -q OK
@@ -64,11 +63,10 @@ execute: |
     sleep 2
   done
   [ "$ok" = 1 ]
-  MODULES=$(percona-valkey.valkey-cli --no-raw MODULE LIST)
-  echo "$MODULES" | grep -qx "audit"
-  echo "$MODULES" | grep -qx "bf"
-  echo "$MODULES" | grep -qx "json"
-  echo "$MODULES" | grep -qx "search"
+  percona-valkey.valkey-cli MODULE LIST | grep -qx "audit"
+  percona-valkey.valkey-cli MODULE LIST | grep -qx "bf"
+  percona-valkey.valkey-cli MODULE LIST | grep -qx "json"
+  percona-valkey.valkey-cli MODULE LIST | grep -qx "search"
 
 restore: |
   snap remove percona-valkey --purge --terminate || true

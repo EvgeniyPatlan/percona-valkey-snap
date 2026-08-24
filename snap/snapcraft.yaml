@@ -13,12 +13,15 @@ description: |
     percona-valkey.valkey-cli JSON.SET doc $ '{"hello":"world"}'
     percona-valkey.valkey-cli BF.ADD filter item
 
-  There is NO password by default — protected-mode restricts access to
-  localhost, but any local process has full access until you set
-  `requirepass` or ACLs in the config. Config lives at
-  /var/snap/percona-valkey/current/etc/valkey/valkey.conf (the server may
-  rewrite it); extra flags via
-  `sudo snap set percona-valkey valkey-args="..."`. Audit events are
+  There is NO password by default — the server binds to 127.0.0.1 only
+  (protected-mode is a secondary guard), but any local process has full
+  access until you set `requirepass` or ACLs in the config. Config lives
+  at /var/snap/percona-valkey/current/etc/valkey/valkey.conf (the server
+  may rewrite it). Durability is RDB snapshots by default; to switch to
+  AOF: sudo percona-valkey.valkey-cli CONFIG SET appendonly yes &&
+  sudo percona-valkey.valkey-cli CONFIG REWRITE. Extra daemon flags via
+  `sudo snap set percona-valkey valkey-args="..."` (takes effect on:
+  sudo snap restart percona-valkey.valkey-server). Audit events are
   logged via the valkey-audit module to
   /var/snap/percona-valkey/common/log/audit.log (see the full option
   reference at
@@ -31,7 +34,8 @@ description: |
   Redis-compatible aliases (redis-cli, redis-benchmark, redis-check-aof,
   redis-check-rdb) are included for drop-in familiarity. Input/output
   files for the CLI tools must live under /var/snap/percona-valkey/common
-  (the snap cannot read your home directory).
+  (the snap cannot read your home directory; use sudo — the data
+  directory is not world-readable).
 
 base: core26
 confinement: strict
@@ -52,10 +56,7 @@ source-code: https://github.com/EvgeniyPatlan/percona-valkey-snap
 website: https://www.percona.com/valkey
 
 hooks:
-  install:
-    plugs:
-      - network
-      - network-bind
+  install: {}
   configure: {}
 
 package-repositories:
@@ -160,6 +161,8 @@ parts:
       - -etc/init.d
       - -etc/default
       - -etc/logrotate.d
+      # Empty after organize relocates valkey-audit.conf.default aside; prune it.
+      - -etc/valkey/valkey.conf.d
       - -lib/systemd
       - -usr/lib/systemd
       - -usr/share/man

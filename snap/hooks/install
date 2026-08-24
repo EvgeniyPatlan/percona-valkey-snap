@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+set -eux
+
+DATA="${SNAP_COMMON}/data"
+LOGS="${SNAP_COMMON}/log"
+RUN="${SNAP_DATA}/run"
+ETC="${SNAP_DATA}/etc/valkey"
+
+mkdir -p "${DATA}" "${LOGS}" "${RUN}" "${ETC}"
+
+if [ ! -f "${ETC}/valkey.conf" ]; then
+    cp "${SNAP}/etc/valkey.conf" "${ETC}/valkey.conf"
+fi
+if [ ! -f "${ETC}/sentinel.conf" ]; then
+    cp "${SNAP}/etc/sentinel.conf" "${ETC}/sentinel.conf"
+fi
+
+# Both configs are rewritten by the daemons at runtime; data/logs/run and
+# the config dir must belong to snap_daemon.
+chown -R snap_daemon:snap_daemon "${DATA}" "${LOGS}" "${RUN}" "${SNAP_DATA}/etc"
+chmod 750 "${DATA}"

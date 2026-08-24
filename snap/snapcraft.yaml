@@ -1,0 +1,178 @@
+name: percona-valkey
+version: '9.1.1-1'
+summary: Percona for Valkey with all bundle modules in a snap.
+description: |
+  Percona for Valkey packages Valkey — the open-source, Linux
+  Foundation-backed key/value datastore — together with Percona's full
+  module bundle, all preloaded and ready to use: valkey-json (JSON.*),
+  valkey-bloom (BF.*), valkey-search (FT.* vector/full-text search), and
+  valkey-audit (audit logging of connections, auth, and commands).
+
+  On install the snap starts valkey-server on 127.0.0.1:6379; try it:
+    percona-valkey.valkey-cli ping
+    percona-valkey.valkey-cli JSON.SET doc $ '{"hello":"world"}'
+    percona-valkey.valkey-cli BF.ADD filter item
+
+  There is NO password by default — protected-mode restricts access to
+  localhost, but any local process has full access until you set
+  `requirepass` or ACLs in the config. Config lives at
+  /var/snap/percona-valkey/current/etc/valkey/valkey.conf (the server may
+  rewrite it); extra flags via
+  `sudo snap set percona-valkey valkey-args="..."`. Audit events are
+  logged via the valkey-audit module (see the option reference at
+  /snap/percona-valkey/current/usr/share/percona-valkey-audit/).
+
+  Valkey Sentinel ships disabled: configure a `sentinel monitor` line in
+  /var/snap/percona-valkey/current/etc/valkey/sentinel.conf, then
+  `sudo snap start percona-valkey.valkey-sentinel`.
+
+  Redis-compatible aliases (redis-cli, redis-benchmark, redis-check-aof,
+  redis-check-rdb) are included for drop-in familiarity. Input/output
+  files for the CLI tools must live under /var/snap/percona-valkey/common
+  (the snap cannot read your home directory).
+
+base: core26
+confinement: strict
+grade: stable
+
+architectures:
+  - amd64
+  - arm64
+
+system-usernames:
+  snap_daemon:
+    scope: shared
+
+license: Apache-2.0
+
+contact: https://github.com/EvgeniyPatlan/percona-valkey-snap
+issues: https://github.com/EvgeniyPatlan/percona-valkey-snap/issues
+source-code: https://github.com/EvgeniyPatlan/percona-valkey-snap
+website: https://www.percona.com/valkey
+
+hooks:
+  install:
+    plugs:
+      - network
+      - network-bind
+  configure: {}
+
+package-repositories:
+  - type: apt
+    ppa: percona/percona-valkey-91
+    # NOTE: percona-valkey-bundle is deliberately NOT staged — as of 9.1.1-2 its
+    # Depends names percona-valkey-ldap, which valkey-91 does not ship, making
+    # the meta uninstallable. Components are pinned individually instead.
+
+apps:
+  valkey-server:
+    command: bin/valkey-server.sh
+    daemon: simple
+    stop-timeout: 5m
+    plugs:
+      - network
+      - network-bind
+
+  valkey-sentinel:
+    command: bin/valkey-sentinel.sh
+    daemon: simple
+    install-mode: disable
+    plugs:
+      - network
+      - network-bind
+
+  valkey-cli:
+    command: usr/bin/valkey-cli
+    plugs:
+      - network
+
+  valkey-benchmark:
+    command: usr/bin/valkey-benchmark
+    plugs:
+      - network
+
+  valkey-check-aof:
+    command: usr/bin/valkey-check-aof
+    plugs:
+      - network
+
+  valkey-check-rdb:
+    command: usr/bin/valkey-check-rdb
+    plugs:
+      - network
+
+  redis-cli:
+    command: usr/bin/redis-cli
+    plugs:
+      - network
+
+  redis-benchmark:
+    command: usr/bin/redis-benchmark
+    plugs:
+      - network
+
+  redis-check-aof:
+    command: usr/bin/redis-check-aof
+    plugs:
+      - network
+
+  redis-check-rdb:
+    command: usr/bin/redis-check-rdb
+    plugs:
+      - network
+
+parts:
+  packages-deb:
+    plugin: nil
+    stage-packages:
+      - percona-valkey-server=1:9.1.1-1.resolute
+      - percona-valkey-tools=1:9.1.1-1.resolute
+      - percona-valkey-sentinel=1:9.1.1-1.resolute
+      - percona-valkey-compat-redis=1:9.1.1-1.resolute
+      - percona-valkey-json=1.0.2-1.resolute
+      - percona-valkey-bloom=1.0.1-1.resolute
+      - percona-valkey-search=1.2.0-1.resolute
+      - percona-valkey-audit=1.0.0-1.resolute
+      - util-linux
+
+    organize:
+      # Copyright files — verify all 8 debs ship these.
+      usr/share/doc/percona-valkey-server/copyright: licenses/COPYRIGHT-percona-valkey-server
+      usr/share/doc/percona-valkey-tools/copyright: licenses/COPYRIGHT-percona-valkey-tools
+      usr/share/doc/percona-valkey-sentinel/copyright: licenses/COPYRIGHT-percona-valkey-sentinel
+      usr/share/doc/percona-valkey-compat-redis/copyright: licenses/COPYRIGHT-percona-valkey-compat-redis
+      usr/share/doc/percona-valkey-json/copyright: licenses/COPYRIGHT-percona-valkey-json
+      usr/share/doc/percona-valkey-bloom/copyright: licenses/COPYRIGHT-percona-valkey-bloom
+      usr/share/doc/percona-valkey-search/copyright: licenses/COPYRIGHT-percona-valkey-search
+      usr/share/doc/percona-valkey-audit/copyright: licenses/COPYRIGHT-percona-valkey-audit
+
+      # Collision relocations — avoid conflicts with snap's own config templates.
+      usr/share/percona-valkey-server/valkey.conf.default: usr/share/percona-valkey-server/valkey.conf.default-upstream
+      usr/share/percona-valkey-sentinel/sentinel.conf.default: usr/share/percona-valkey-sentinel/sentinel.conf.default-upstream
+      usr/share/percona-valkey-audit/valkey-audit.conf.default: usr/share/percona-valkey-audit/valkey-audit.conf.default-upstream
+
+    prime:
+      - -etc/init.d
+      - -etc/default
+      - -etc/logrotate.d
+      - -lib/systemd
+      - -usr/lib/systemd
+      - -usr/share/man
+
+  snap-scripts:
+    plugin: dump
+    source: snap/local
+    organize:
+      bin: bin
+      etc: etc
+    override-prime: |
+      snapcraftctl prime
+      for f in bin/*.sh etc/*.conf; do
+        sed -i "s/_NAME_/$SNAPCRAFT_PROJECT_NAME/g" "$f"
+      done
+
+  snap-license:
+    plugin: dump
+    source: snap/license
+    prime:
+      - LICENSE

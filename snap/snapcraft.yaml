@@ -19,7 +19,9 @@ description: |
   /var/snap/percona-valkey/current/etc/valkey/valkey.conf (the server may
   rewrite it); extra flags via
   `sudo snap set percona-valkey valkey-args="..."`. Audit events are
-  logged via the valkey-audit module (see the option reference at
+  logged via the valkey-audit module to
+  /var/snap/percona-valkey/common/log/audit.log (see the full option
+  reference at
   /snap/percona-valkey/current/usr/share/percona-valkey-audit/).
 
   Valkey Sentinel ships disabled: configure a `sentinel monitor` line in

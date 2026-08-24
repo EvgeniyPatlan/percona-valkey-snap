@@ -5,8 +5,12 @@ description: |
   Percona for Valkey packages Valkey — the open-source, Linux
   Foundation-backed key/value datastore — together with Percona's full
   module bundle, all preloaded and ready to use: valkey-json (JSON.*),
-  valkey-bloom (BF.*), valkey-search (FT.* vector/full-text search), and
-  valkey-audit (audit logging of connections, auth, and commands).
+  valkey-bloom (BF.*), valkey-search (FT.* vector/full-text search),
+  valkey-audit (audit logging of connections, auth, and commands), and
+  valkey-ldap (LDAP authentication) — five modules in total. valkey-ldap
+  needs configuration before use (LDAP server, bind DN, etc.) — see the
+  module README in the snap under
+  usr/share/doc/percona-valkey-ldap/.
 
   On install the snap starts valkey-server on 127.0.0.1:6379; try it:
     percona-valkey.valkey-cli ping
@@ -63,11 +67,17 @@ package-repositories:
   - type: apt
     url: https://repo.percona.com/valkey-91/apt
     suites: [resolute]
-    components: [main]
+    # testing is enabled ONLY for percona-valkey-ldap: Percona publishes its
+    # Ubuntu builds solely in testing so far (Debian builds are in main);
+    # every other package is exact-pinned to a main version, so nothing else
+    # can drift.
+    components: [main, testing]
     key-id: 4D1BB29D63D98E422B2113B19334A25F8507EFA5
-    # NOTE: percona-valkey-bundle is deliberately NOT staged — as of 9.1.1-2 its
-    # Depends names percona-valkey-ldap, which valkey-91 does not ship, making
-    # the meta uninstallable. Components are pinned individually instead.
+    # NOTE: percona-valkey-bundle is deliberately NOT staged — its Depends
+    # needs percona-valkey-ldap, whose Ubuntu builds are (as of 2026-08-24)
+    # only in the testing component (main carries Debian builds only),
+    # making the meta uninstallable from Ubuntu main. Components are pinned
+    # individually instead.
 
 apps:
   valkey-server:
@@ -138,10 +148,11 @@ parts:
       - percona-valkey-bloom=1.0.1-1.resolute
       - percona-valkey-search=1.2.0-1.resolute
       - percona-valkey-audit=1.0.0-1.resolute
+      - percona-valkey-ldap=1.1.1-2.resolute
       - util-linux
 
     organize:
-      # Copyright files — verify all 8 debs ship these.
+      # Copyright files — verify all 9 debs ship these.
       usr/share/doc/percona-valkey-server/copyright: licenses/COPYRIGHT-percona-valkey-server
       usr/share/doc/percona-valkey-tools/copyright: licenses/COPYRIGHT-percona-valkey-tools
       usr/share/doc/percona-valkey-sentinel/copyright: licenses/COPYRIGHT-percona-valkey-sentinel
@@ -150,6 +161,7 @@ parts:
       usr/share/doc/percona-valkey-bloom/copyright: licenses/COPYRIGHT-percona-valkey-bloom
       usr/share/doc/percona-valkey-search/copyright: licenses/COPYRIGHT-percona-valkey-search
       usr/share/doc/percona-valkey-audit/copyright: licenses/COPYRIGHT-percona-valkey-audit
+      usr/share/doc/percona-valkey-ldap/copyright: licenses/COPYRIGHT-percona-valkey-ldap
 
       # Deb-shipped configs relocated aside: our snap-scripts templates own
       # the live paths; these stay as operator reference copies.

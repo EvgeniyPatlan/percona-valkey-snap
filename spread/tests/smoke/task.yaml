@@ -22,11 +22,12 @@ execute: |
   percona-valkey.valkey-cli SET test-key "hello-world"
   percona-valkey.valkey-cli GET test-key | grep -q "hello-world"
 
-  echo "Test MODULE LIST contains all four Percona modules"
+  echo "Test MODULE LIST contains all five Percona modules"
   percona-valkey.valkey-cli MODULE LIST | grep -qx "audit"
   percona-valkey.valkey-cli MODULE LIST | grep -qx "bf"
   percona-valkey.valkey-cli MODULE LIST | grep -qx "json"
   percona-valkey.valkey-cli MODULE LIST | grep -qx "search"
+  percona-valkey.valkey-cli MODULE LIST | grep -qx "ldap"
 
   echo "Test JSON module"
   percona-valkey.valkey-cli JSON.SET doc \$ '{"hello":"world"}' | grep -q OK
@@ -67,6 +68,7 @@ execute: |
   percona-valkey.valkey-cli MODULE LIST | grep -qx "bf"
   percona-valkey.valkey-cli MODULE LIST | grep -qx "json"
   percona-valkey.valkey-cli MODULE LIST | grep -qx "search"
+  percona-valkey.valkey-cli MODULE LIST | grep -qx "ldap"
 
 restore: |
   snap remove percona-valkey --purge --terminate || true

@@ -15,7 +15,11 @@ if [ ! -f "${ETC}/sentinel.conf" ]; then
     cp "${SNAP}/etc/sentinel.conf" "${ETC}/sentinel.conf"
 fi
 
-# Both configs are rewritten by the daemons at runtime; data/logs/run and
-# the config dir must belong to snap_daemon.
-chown -R snap_daemon:snap_daemon "${DATA}" "${LOGS}" "${RUN}" "${SNAP_DATA}/etc"
 chmod 750 "${DATA}"
+
+# Both configs are rewritten by the daemons at runtime; data/logs/run and
+# the config dir must belong to snap_daemon. This chown must be the last
+# thing the hook does: under strict confinement, root loses DAC-override
+# on a path once it no longer owns it, so any write/chmod issued after
+# the handoff fails with "Operation not permitted".
+chown -R snap_daemon:snap_daemon "${DATA}" "${LOGS}" "${RUN}" "${SNAP_DATA}/etc"

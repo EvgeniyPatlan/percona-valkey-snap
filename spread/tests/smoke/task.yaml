@@ -23,11 +23,11 @@ execute: |
   percona-valkey.valkey-cli GET test-key | grep -q "hello-world"
 
   echo "Test MODULE LIST contains all four Percona modules"
-  MODULES=$(percona-valkey.valkey-cli MODULE LIST)
-  echo "$MODULES" | grep -q "audit"
-  echo "$MODULES" | grep -q "bf"
-  echo "$MODULES" | grep -q "json"
-  echo "$MODULES" | grep -q "search"
+  MODULES=$(percona-valkey.valkey-cli --no-raw MODULE LIST)
+  echo "$MODULES" | grep -qx "audit"
+  echo "$MODULES" | grep -qx "bf"
+  echo "$MODULES" | grep -qx "json"
+  echo "$MODULES" | grep -qx "search"
 
   echo "Test JSON module"
   percona-valkey.valkey-cli JSON.SET doc \$ '{"hello":"world"}' | grep -q OK
@@ -43,7 +43,12 @@ execute: |
 
   echo "Test audit log destination"
   percona-valkey.valkey-cli SET audit-test-key "test-value"
-  grep -q "CONNECTION" /var/snap/percona-valkey/common/log/audit.log || true
+  ok=0
+  for _ in $(seq 15); do
+    grep -q "\[CONNECTION\]" /var/snap/percona-valkey/common/log/audit.log 2>/dev/null && { ok=1; break; }
+    sleep 1
+  done
+  [ "$ok" = 1 ]
 
   echo "Test snap services are correctly configured"
   snap services | grep "\.valkey-server\s\+enabled\s\+active"
@@ -59,11 +64,11 @@ execute: |
     sleep 2
   done
   [ "$ok" = 1 ]
-  MODULES=$(percona-valkey.valkey-cli MODULE LIST)
-  echo "$MODULES" | grep -q "audit"
-  echo "$MODULES" | grep -q "bf"
-  echo "$MODULES" | grep -q "json"
-  echo "$MODULES" | grep -q "search"
+  MODULES=$(percona-valkey.valkey-cli --no-raw MODULE LIST)
+  echo "$MODULES" | grep -qx "audit"
+  echo "$MODULES" | grep -qx "bf"
+  echo "$MODULES" | grep -qx "json"
+  echo "$MODULES" | grep -qx "search"
 
 restore: |
   snap remove percona-valkey --purge --terminate || true

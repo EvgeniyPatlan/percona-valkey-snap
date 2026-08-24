@@ -1,25 +1,47 @@
 #!/usr/bin/env bash
 set -eux
 
+id
+
 DATA="${SNAP_COMMON}/data"
 LOGS="${SNAP_COMMON}/log"
 RUN="${SNAP_DATA}/run"
 ETC="${SNAP_DATA}/etc/valkey"
 
-mkdir -p "${DATA}" "${LOGS}" "${RUN}" "${ETC}"
+# Ownership follows the proven family idiom (percona-server-mysql-snap's
+# install hook, CI-green under the same strict/jailmode confinement):
+# chown group stays "root", never "snap_daemon:snap_daemon", and each
+# directory is created/populated and chowned immediately, one at a time,
+# rather than swept together in one multi-path chown -R at the end.
+# Group=root is safe: valkey-server.sh/valkey-sentinel.sh run the daemons
+# via `setpriv --reuid snap_daemon --regid snap_daemon`, so the matching
+# owner UID (snap_daemon) is what grants access — the OWNER permission
+# bits govern, and group ownership is irrelevant to the daemons' access.
 
+# Configuration
+mkdir -p "${ETC}"
 if [ ! -f "${ETC}/valkey.conf" ]; then
     cp "${SNAP}/etc/valkey.conf" "${ETC}/valkey.conf"
 fi
 if [ ! -f "${ETC}/sentinel.conf" ]; then
     cp "${SNAP}/etc/sentinel.conf" "${ETC}/sentinel.conf"
 fi
+ls -land "${ETC}"
+chown -R snap_daemon:root "${ETC}"
 
-chmod 750 "${DATA}"
+# Logs
+mkdir -p "${LOGS}"
+ls -land "${LOGS}"
+chown -R snap_daemon:root "${LOGS}"
 
-# Both configs are rewritten by the daemons at runtime; data/logs/run and
-# the config dir must belong to snap_daemon. This chown must be the last
-# thing the hook does: under strict confinement, root loses DAC-override
-# on a path once it no longer owns it, so any write/chmod issued after
-# the handoff fails with "Operation not permitted".
-chown -R snap_daemon:snap_daemon "${DATA}" "${LOGS}" "${RUN}" "${SNAP_DATA}/etc"
+# Sockets
+mkdir -p "${RUN}"
+ls -land "${RUN}"
+chown -R snap_daemon:root "${RUN}"
+
+# Data directory: create, hand ownership to snap_daemon, then lock down
+# group/other access — in that order, matching the sibling hook exactly.
+mkdir -p "${DATA}"
+ls -land "${DATA}"
+chown snap_daemon:root "${DATA}"
+chmod go-rwx "${DATA}"

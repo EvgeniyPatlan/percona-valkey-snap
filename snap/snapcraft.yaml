@@ -148,7 +148,7 @@ parts:
       - percona-valkey-bloom=1.0.1-1.resolute
       - percona-valkey-search=1.2.0-1.resolute
       - percona-valkey-audit=1.0.0-1.resolute
-      - percona-valkey-ldap=1.1.1-2.resolute
+      - percona-valkey-ldap=1.1.1-1.resolute
       - util-linux
 
     organize:

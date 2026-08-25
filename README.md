@@ -165,6 +165,63 @@ CRAFT_ARTIFACT=$(pwd)/percona-valkey_<version>_amd64.snap spread -v
 (`spread` from `go install github.com/canonical/spread/cmd/spread@latest`;
 needs the `lxd` snap.)
 
+## Updating to a new Percona release
+
+`scripts/bump-version.sh` checks every exact-pinned package in
+`snap/snapcraft.yaml` against the apt indexes declared under
+`package-repositories`, and bumps any pin (and the top-level `version:`
+field, derived from the `percona-valkey-server` pin) that is out of date.
+
+For a package available from more than one component (this repo declares
+both `main` and `testing` from the same apt source), the script only takes
+candidate versions from the first component, in the order listed under
+`components:`, that actually contains that package — so
+`percona-valkey-ldap` resolves from `testing` (absent from `main` as of
+this writing, see the tracks table above) while every other package
+resolves from `main` and ignores any newer build that happens to also sit
+in `testing`. If Percona later syncs `percona-valkey-ldap`'s Ubuntu builds
+into `main`, the same rule switches it to tracking `main` automatically.
+
+### Automated
+
+The `Update check` workflow (`.github/workflows/update-check.yaml`) runs
+weekly and, for each `*/edge` branch, runs the same script and opens a pull
+request per branch that has an available update. The PR:
+
+- touches only `snap/snapcraft.yaml`, with the pin diff as the commit;
+- contains the script's summary table (old/new version per package) in its
+  description;
+- is verified the same way any other PR is: CI (`Tests`) builds the snap for
+  `amd64` and `arm64` and runs the full spread suite against it. Merging the
+  PR into its track branch produces the downloadable `snap-packages`
+  artifact described above.
+
+To trigger an immediate check instead of waiting for the weekly run, start
+the `Update check` workflow manually from the Actions tab (`workflow_dispatch`,
+optionally scoped to one branch via the `branch` input).
+
+If a bump PR is closed without merging, its `bump/<track>-<version>` branch
+is left behind and that exact version is skipped on every future run until
+the branch is deleted (or a newer version ships) — delete the branch if you
+want the check retried for that version.
+
+### Manual
+
+```
+./scripts/bump-version.sh
+git diff
+```
+
+Review the diff, then commit and push as usual.
+
+### Scope
+
+The script only updates pins within the current track (`9.1`). A new
+Percona major version means a new track/branch and, per the Percona
+publishing model for Valkey, a new apt repository path
+(`repo.percona.com/valkey-<NN>/apt`) — that's a manual, one-time setup, not
+something this script does.
+
 ## License
 
 The snap packaging is Apache-2.0. Upstream component licenses (Valkey

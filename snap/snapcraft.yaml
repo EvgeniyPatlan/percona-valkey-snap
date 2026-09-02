@@ -1,5 +1,5 @@
 name: percona-valkey
-version: '9.1.1-1'
+version: '9.1.2-1'
 summary: Percona for Valkey with all bundle modules in a snap.
 description: |
   Percona for Valkey packages Valkey — the open-source, Linux
@@ -140,15 +140,15 @@ parts:
   packages-deb:
     plugin: nil
     stage-packages:
-      - percona-valkey-server=1:9.1.1-1.resolute
-      - percona-valkey-tools=1:9.1.1-1.resolute
-      - percona-valkey-sentinel=1:9.1.1-1.resolute
-      - percona-valkey-compat-redis=1:9.1.1-1.resolute
-      - percona-valkey-json=1.0.2-1.resolute
-      - percona-valkey-bloom=1.0.1-1.resolute
-      - percona-valkey-search=1.2.0-1.resolute
-      - percona-valkey-audit=1.0.0-1.resolute
-      - percona-valkey-ldap=1.1.1-2.resolute
+      - percona-valkey-server=1:9.1.2-1.resolute
+      - percona-valkey-tools=1:9.1.2-1.resolute
+      - percona-valkey-sentinel=1:9.1.2-1.resolute
+      - percona-valkey-compat-redis=1:9.1.2-1.resolute
+      - percona-valkey-json=1.0.2-3.resolute
+      - percona-valkey-bloom=1.0.1-3.resolute
+      - percona-valkey-search=1.2.0-3.resolute
+      - percona-valkey-audit=1.0.0-3.resolute
+      - percona-valkey-ldap=1.1.1-3.resolute
       - util-linux
 
     organize:

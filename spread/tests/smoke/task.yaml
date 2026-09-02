@@ -15,8 +15,10 @@ execute: |
   echo "Test server is running and responding"
   percona-valkey.valkey-cli ping | grep -q PONG
 
-  echo "Test version"
-  percona-valkey.valkey-cli INFO server | grep -q "valkey_version:9.1.1"
+  echo "Test version (expected value derived from snapcraft.yaml, never hardcoded)"
+  SNAP_VERSION=$(awk -F\' '/^version/{print $2}' "${SPREAD_PATH}"/snap/snapcraft.yaml)
+  VALKEY_VERSION="${SNAP_VERSION%%-*}"
+  percona-valkey.valkey-cli INFO server | grep -q "valkey_version:${VALKEY_VERSION:-error}"
 
   echo "Test basic SET/GET"
   percona-valkey.valkey-cli SET test-key "hello-world"
